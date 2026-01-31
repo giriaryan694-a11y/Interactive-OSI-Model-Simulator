@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -6,8 +6,8 @@
 <title>Interactive OSI Model Simulator 🌐 — Made by Aryan Giri</title>
 <style>
   :root{
-    --bg:#0f1113; --accent:#00ffcc; --card:#0b1111; --muted:#9bd;
-    --text:#eafaf6;
+    --bg:#071014; --accent:#00ffcc; --card:#071219; --muted:#9bd; --text:#eafaf6;
+    --soft:#0b1516;
   }
   *{box-sizing:border-box}
   body{
@@ -23,45 +23,51 @@
 
   .grid{
     display:grid;
-    grid-template-columns: 320px 1fr 320px;
-    gap:18px;
+    grid-template-columns: 300px 1fr 300px;
+    gap:16px;
     margin-top:18px;
   }
 
-  /* Left: Layer explanations */
-  .panel{background:linear-gradient(180deg,#071114 0%, var(--card) 100%); border:1px solid rgba(0,255,204,0.08);
-    padding:14px; border-radius:10px;}
+  .panel{
+    background:linear-gradient(180deg,var(--soft) 0%, var(--card) 100%);
+    border:1px solid rgba(0,255,204,0.06);
+    padding:14px; border-radius:10px;
+  }
+
+  /* LEFT: Layer explanations */
   .layers-list {display:flex; flex-direction:column; gap:8px}
-  .layer-item{display:flex; gap:10px; align-items:flex-start; padding:8px; border-radius:8px;}
+  .layer-item{display:flex; gap:10px; align-items:flex-start; padding:10px; border-radius:8px;}
   .layer-emoji{font-size:20px; width:36px; text-align:center}
   .layer-title{font-weight:700; color:var(--accent); font-size:14px}
-  .layer-desc{font-size:13px; color:#cfe; margin-top:4px; opacity:.9}
+  .layer-desc{font-size:13px; color:#cfe; margin-top:4px; opacity:.95}
 
-  /* Center: animation area */
+  /* CENTER: animation area */
   .sim-area{position:relative; height:420px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;}
   .controls{display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap}
-  input[type="text"]{padding:8px 10px; border-radius:8px; border:none; min-width:220px}
-  select, button{padding:8px 10px; border-radius:8px; border:none; cursor:pointer}
+  input[type="text"]{padding:8px 10px; border-radius:8px; border:none; min-width:220px; background:#081214; color:var(--text)}
+  select, button, input[type="range"]{padding:8px 10px; border-radius:8px; border:none; cursor:pointer; background:#071216; color:var(--text)}
   button{background:var(--accent); color:#061013; font-weight:700}
+  button.secondary{background:#113033; color:var(--text); font-weight:600}
   .legend{font-size:13px; color:#cfe; margin-top:8px}
 
   .network{
     position:relative; width:100%; max-width:720px; height:260px; border-radius:10px;
-    border:1px dashed rgba(0,255,204,0.06); display:flex; align-items:center; justify-content:space-between;
-    padding:20px;
-    background:linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0.05));
+    border:1px dashed rgba(0,255,204,0.04); display:flex; align-items:center; justify-content:space-between;
+    padding:20px; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
   }
 
   .host{width:120px; text-align:center}
-  .host .ip{font-weight:700; color:var(--accent); margin-top:6px}
+  .host .ip{font-weight:700; color:var(--accent); margin-top:6px; font-size:13px}
   .layer-stack{
-    position:absolute; left:50%; transform:translateX(-50%); top:10px; font-size:13px; color:#cfe; opacity:.9;
+    position:absolute; left:50%; transform:translateX(-50%); top:12px; font-size:13px; color:#cfe; opacity:.95;
+    background:rgba(0,0,0,0.15); padding:6px 10px; border-radius:8px;
   }
 
   /* packet */
   .packet{
-    position:absolute; top:120px; left:20px; font-size:28px; transition: left 700ms linear, top .3s;
-    background:rgba(0,255,204,0.06); padding:8px 12px; border-radius:12px; border:1px solid rgba(0,255,204,0.08);
+    display:none; /* hidden until send */
+    position:absolute; top:120px; left:18px; font-size:28px; transition: left 450ms linear, top .3s;
+    background:rgba(0,255,204,0.04); padding:8px 12px; border-radius:12px; border:1px solid rgba(0,255,204,0.06);
     display:flex; gap:8px; align-items:center; min-width:72px; justify-content:center;
   }
   .packet .small{font-size:12px; color:#cfe}
@@ -76,8 +82,9 @@
   .controls .smalltext{font-size:13px; color:#cff}
 
   /* highlight active layer on left */
-  .layer-active{background:linear-gradient(90deg, rgba(0,255,204,0.04), rgba(0,255,204,0.02));}
+  .layer-active{background:linear-gradient(90deg, rgba(0,255,204,0.03), rgba(0,255,204,0.015));}
 
+  /* compact mobile */
   @media (max-width:980px){
     .grid{grid-template-columns: 1fr; }
     .network{height:220px}
@@ -92,30 +99,28 @@
       <h1>Interactive OSI Model Simulator 🌐</h1>
       <div class="sub">Encapsulation ↓ — Transmission → — De-Encapsulation ↑ (emoji-only visuals)</div>
     </div>
-    <div style="text-align:right; font-size:13px; color:#bfe">
-      Made by Aryan Giri 💻
-    </div>
+    <div style="text-align:right; font-size:13px; color:#bfe">Made by Aryan Giri 💻</div>
   </header>
 
-  <div class="grid">
+  <div class="grid" role="main">
     <!-- LEFT: Layer definitions -->
-    <div class="panel">
+    <div class="panel" aria-label="OSI layer quick guide">
       <strong style="color:var(--accent)">OSI Layers — quick explanations</strong>
       <div class="layers-list" id="layersList" style="margin-top:12px">
         <div class="layer-item" data-idx="0"><div class="layer-emoji">🌐</div>
-          <div><div class="layer-title">Application</div><div class="layer-desc">User app data (message text). Highest layer — interacts with user.</div></div></div>
+          <div><div class="layer-title">Application</div><div class="layer-desc">User app data (message text). Interacts with user.</div></div></div>
 
         <div class="layer-item" data-idx="1"><div class="layer-emoji">🎨</div>
-          <div><div class="layer-title">Presentation</div><div class="layer-desc">Encoding / formatting (e.g., UTF-8). Prepares data for transport.</div></div></div>
+          <div><div class="layer-title">Presentation</div><div class="layer-desc">Encoding/formatting (e.g., UTF-8). Prepares data for transport.</div></div></div>
 
         <div class="layer-item" data-idx="2"><div class="layer-emoji">🔗</div>
           <div><div class="layer-title">Session</div><div class="layer-desc">Manages sessions/connections (start/stop).</div></div></div>
 
         <div class="layer-item" data-idx="3"><div class="layer-emoji">📦</div>
-          <div><div class="layer-title">Transport</div><div class="layer-desc">Adds TCP/UDP header (ports, reliability). Responsible for segmentation.</div></div></div>
+          <div><div class="layer-title">Transport</div><div class="layer-desc">Adds TCP/UDP header (ports, seq). Segmentation & reliability.</div></div></div>
 
         <div class="layer-item" data-idx="4"><div class="layer-emoji">🛣️</div>
-          <div><div class="layer-title">Network</div><div class="layer-desc">Adds IP header (source/destination IP) — routing between networks.</div></div></div>
+          <div><div class="layer-title">Network</div><div class="layer-desc">Adds IP header (src/dst IP) — routing between networks.</div></div></div>
 
         <div class="layer-item" data-idx="5"><div class="layer-emoji">💽</div>
           <div><div class="layer-title">Data Link</div><div class="layer-desc">Adds MAC header/frame for local delivery on the link.</div></div></div>
@@ -127,29 +132,37 @@
 
     <!-- CENTER: Simulation -->
     <div class="panel sim-area" aria-live="polite">
-      <div class="controls">
-        <input id="msg" type="text" placeholder="Type message to send (example: Hello!)" />
-        <select id="proto"><option value="TCP">TCP 📦</option><option value="UDP">UDP 🎯</option></select>
-        <button id="sendBtn">Send Packet</button>
-        <button id="resetBtn" style="background:#334; color:var(--text)">Reset</button>
+      <div class="controls" role="region" aria-label="Simulation controls">
+        <input id="msg" type="text" placeholder="Type message to send (example: Hello!)" aria-label="Message input" />
+        <select id="proto" aria-label="Protocol select"><option value="TCP">TCP 📦</option><option value="UDP">UDP 🎯</option></select>
+
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#cfe;">
+          <span style="font-weight:700; color:#cfe">Speed</span>
+          <input id="speed" type="range" min="100" max="2000" step="50" value="700" aria-label="Animation speed slider">
+          <span id="speedVal" style="min-width:48px; text-align:center">700ms</span>
+        </label>
+
+        <button id="sendBtn" title="Send packet">Send ▶️</button>
+        <button id="resetBtn" class="secondary" title="Reset simulation">Reset ⟲</button>
+
         <div style="flex:1"></div>
         <div class="smalltext legend">Sender: 💻 49.20.60.12 → Receiver: 💻 49.20.60.20</div>
       </div>
 
-      <div class="network" id="network">
+      <div class="network" id="network" aria-hidden="false">
         <div class="host" id="hostA">
           <div style="font-size:34px">💻</div>
           <div class="ip">49.20.60.12</div>
         </div>
 
-        <div class="layer-stack" id="stageLabel">Ready to send — press Send Packet ▶️</div>
+        <div class="layer-stack" id="stageLabel">Ready — press Send ▶️</div>
 
         <div class="host" id="hostB">
           <div style="font-size:34px">💻</div>
           <div class="ip">49.20.60.20</div>
         </div>
 
-        <div class="packet" id="packet" style="left:18px">
+        <div class="packet" id="packet" style="left:18px" aria-hidden="true">
           <div id="packetEmoji">📩</div>
           <div class="small" id="packetSmall">data</div>
         </div>
@@ -157,14 +170,14 @@
 
       <div style="margin-top:12px; color:#cfe; font-size:13px">
         <strong id="liveAction">Action: —</strong>
-        <div id="liveExplain" class="explain">Short explanations and the header stack will appear on the right as the simulation runs.</div>
+        <div id="liveExplain" class="explain">Short explanations and header stack appear on the right during simulation.</div>
       </div>
     </div>
 
     <!-- RIGHT: Stack & live steps -->
-    <div class="panel">
+    <div class="panel" aria-live="polite">
       <strong style="color:var(--accent)">Encapsulation / De-Encapsulation</strong>
-      <div style="margin-top:10px; font-size:13px; color:#cfe">The <em>stack</em> shows how headers are added (encapsulation) and removed (de-encapsulation).</div>
+      <div style="margin-top:10px; font-size:13px; color:#cfe">The stack shows how headers are added (encapsulation) and removed (de-encapsulation).</div>
 
       <div class="stack-list" id="stackList" style="margin-top:12px">
         <!-- dynamic items -->
@@ -185,7 +198,7 @@
 </div>
 
 <script>
-  // elements
+  // UI elements
   const msgInput = document.getElementById('msg');
   const protoSel = document.getElementById('proto');
   const sendBtn = document.getElementById('sendBtn');
@@ -198,7 +211,10 @@
   const liveExplain = document.getElementById('liveExplain');
   const stageLabel = document.getElementById('stageLabel');
   const layersLeft = document.querySelectorAll('.layer-item');
+  const speedRange = document.getElementById('speed');
+  const speedVal = document.getElementById('speedVal');
 
+  // Layer definitions
   const LAYERS = [
     {name:'Application', emoji:'🌐', encaps: (data)=>`App data: "${data}"`, decaps: (data)=>`Application delivers: "${data}"`},
     {name:'Presentation', emoji:'🎨', encaps: ()=>`Format/encode data`, decaps: ()=>`Decode/format`},
@@ -209,24 +225,39 @@
     {name:'Physical', emoji:'🔌', encaps: ()=>`Bits (0/1)`, decaps: ()=>`Bits -> frames`},
   ];
 
-  // stack (top is last)
   let headerStack = [];
   let busy=false;
+  let showPayloadInStack=false; // only true during animation
+
+  // update speed label
+  function updateSpeedLabel(){ speedVal.innerText = speedRange.value + 'ms'; }
+  speedRange.addEventListener('input', updateSpeedLabel);
+  updateSpeedLabel();
 
   function renderStack(){
     stackList.innerHTML = '';
-    // show data at bottom first (application payload)
-    const payload = document.createElement('div');
-    payload.className = 'stack-item';
-    payload.innerHTML = `<div>📩 Payload (Application)</div><div style="opacity:.85">"${msgInput.value || 'Hello!'}"</div>`;
-    stackList.appendChild(payload);
+    // payload only shown when sending or when stack non-empty
+    if(showPayloadInStack){
+      const payload = document.createElement('div');
+      payload.className = 'stack-item';
+      payload.innerHTML = `<div>📩 Payload (Application)</div><div style="opacity:.85">"${msgInput.value || 'Hello!'}"</div>`;
+      stackList.appendChild(payload);
+    }
 
-    // add stack items from bottom to top (application at bottom)
     for(let i=headerStack.length-1;i>=0;i--){
       const it = document.createElement('div');
       it.className = 'stack-item';
       it.innerHTML = `<div style="font-weight:700">${headerStack[i].icon} ${headerStack[i].name}</div><div style="opacity:.9">${headerStack[i].info}</div>`;
       stackList.appendChild(it);
+    }
+
+    // if nothing to show, a small hint
+    if(!showPayloadInStack && headerStack.length===0){
+      const hint = document.createElement('div');
+      hint.className = 'stack-item';
+      hint.style.opacity = '0.8';
+      hint.innerHTML = `<div style="font-weight:700">Stack is empty</div><div style="opacity:.9">Press Send to see encapsulation</div>`;
+      stackList.appendChild(hint);
     }
   }
 
@@ -251,38 +282,46 @@
     renderStack();
   }
 
-  // positions
   function getTravelWidth(){
     const network = document.getElementById('network');
     const rect = network.getBoundingClientRect();
-    // packet left margin 18, right margin ~18
-    return rect.width - 80;
+    return rect.width - 100;
   }
+
+  // delay helper uses speed slider
+  function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
+  function getDelay(){ return Number(speedRange.value); }
 
   async function sendPacketAnim(){
     if(busy) return;
     busy=true;
     headerStack = [];
+    showPayloadInStack = true; // show payload only during sim
     renderStack();
+
     const message = msgInput.value || 'Hello!';
     const proto = protoSel.value || 'TCP';
     const travelWidth = getTravelWidth();
-    // reset packet to sender
+
+    // reset UI
+    packetEl.style.display = 'flex';
     packetEl.style.left = '18px';
     packetSmall.innerText = 'payload';
     packetEmoji.innerText = '📩';
+    packetEl.setAttribute('aria-hidden','false');
+
     setLive('Encapsulation ↓', 'Starting encapsulation at sender (top → down)');
-    // Encapsulation: move down layers 0..6
+
+    // Encapsulation
     for(let i=0;i<LAYERS.length;i++){
       highlightLayer(i);
-      // text
       let info;
       if(i===0){ info = LAYERS[i].encaps(message); }
       else if(i===3){ info = LAYERS[i].encaps(proto); }
       else { info = LAYERS[i].encaps(); }
       setLive(`Encapsulating: ${LAYERS[i].name}`, info);
 
-      // visual stack change: add header (but for Application layer we keep payload as bottom)
+      // push headers visually
       if(i===3){
         pushHeader('Transport','📦', LAYERS[i].encaps(proto));
         packetEmoji.innerText = proto==='TCP' ? '📦📩' : '🎯📩';
@@ -297,92 +336,97 @@
         pushHeader('Physical','🔌', LAYERS[i].encaps());
         packetEmoji.innerText = '0️⃣1️⃣0️⃣1️⃣'; packetSmall.innerText='Bits';
       } else if(i===1 || i===2){
-        // presentation/session — short note on stack (not separate headers)
         pushHeader(LAYERS[i].name, LAYERS[i].emoji, LAYERS[i].encaps());
         packetSmall.innerText = 'data';
       } else if(i===0){
-        // application data already present
-        // (no header pushed for app because it's payload)
+        // payload base (already represented)
       }
 
-      // move packet horizontally slightly step-by-step
+      // move packet horizontally according to progress
       const left = Math.round((i / (LAYERS.length-1)) * travelWidth) + 18;
       packetEl.style.left = left + 'px';
 
-      // wait
-      await new Promise(r=>setTimeout(r, 900));
+      // wait according to speed
+      await delay(getDelay());
     }
 
-    // pause at mid (transmission)
-    setLive('Transmission →','Packet is travelling across the network (link) to receiver');
-    // slide fully near receiver mid
+    // Transmission (crossing network)
+    setLive('Transmission →', 'Packet is traveling across the network to receiver');
     packetEl.style.left = (travelWidth + 18) + 'px';
-    await new Promise(r=>setTimeout(r, 900));
+    await delay(getDelay());
 
-    // De-Encapsulation: pop from Physical up to Application
-    setLive('De-Encapsulation ↑','Receiver starts removing headers (bottom → top)');
-    highlightLayer(LAYERS.length-1);
+    // De-Encapsulation
+    setLive('De-Encapsulation ↑', 'Receiver removes headers (bottom → top)');
     for(let i=LAYERS.length-1;i>=0;i--){
       highlightLayer(i);
       if(i===6){
         setLive('Physical: Receiving bits','Convert bits to frame');
-        // pop physical
-        await new Promise(r=>setTimeout(r,600));
+        await delay(Math.round(getDelay() * 0.6));
         popHeader();
         packetEmoji.innerText = '💽📩'; packetSmall.innerText='Frame';
       } else if(i===5){
         setLive('Data Link: Frame processing','Extract frame, check MAC');
-        await new Promise(r=>setTimeout(r,700));
+        await delay(getDelay());
         popHeader();
         packetEmoji.innerText = '🌐📩'; packetSmall.innerText='IP packet';
       } else if(i===4){
         setLive('Network: IP processing','Remove IP header, route to transport');
-        await new Promise(r=>setTimeout(r,700));
+        await delay(getDelay());
         popHeader();
         packetEmoji.innerText = proto==='TCP' ? '📦📩' : '🎯📩';
         packetSmall.innerText = proto==='TCP' ? 'TCP seg' : 'UDP seg';
       } else if(i===3){
-        setLive('Transport: Port & reliability','Transport removes headers, delivers segments to app');
-        await new Promise(r=>setTimeout(r,900));
+        setLive('Transport: Port & reliability','Transport removes headers, delivers to app');
+        await delay(getDelay());
         popHeader();
         packetEmoji.innerText = '📩'; packetSmall.innerText='payload';
       } else if(i===2 || i===1){
-        setLive(`${LAYERS[i].name}: ${i===2?'Session':'Presentation'}`, LAYERS[i].decaps());
-        await new Promise(r=>setTimeout(r,600));
-        popHeader(); // these were pushed earlier
+        setLive(`${LAYERS[i].name}`, LAYERS[i].decaps());
+        await delay(Math.round(getDelay()*0.6));
+        popHeader();
       } else if(i===0){
-        setLive('Application: Message delivered','Final data handed to application (user sees message)');
-        await new Promise(r=>setTimeout(r,700));
-        // done
+        setLive('Application: Message delivered', `Final data handed to application: "${message}"`);
+        await delay(Math.round(getDelay()*0.8));
       }
-      // move packet a tiny bit left so it's visually rising up
+
+      // move packet slightly left as we go up
       const left = Math.round((i / (LAYERS.length-1)) * travelWidth) + 18;
       packetEl.style.left = left + 'px';
-      await new Promise(r=>setTimeout(r,150));
+      await delay(120);
     }
 
     // finish
     setLive('Done ✅', `Delivered message: "${message}"`);
     highlightLayer(-1);
+
+    // hide packet and stack after a short pause so UI stays clean
+    await delay(getDelay());
+    packetEl.style.display = 'none';
+    packetEl.setAttribute('aria-hidden','true');
+    showPayloadInStack = false;
+    headerStack = [];
+    renderStack();
+
     busy=false;
   }
 
   sendBtn.addEventListener('click', sendPacketAnim);
   resetBtn.addEventListener('click', ()=>{
-    headerStack=[]; renderStack(); packetEl.style.left='18px'; packetEmoji.innerText='📩'; packetSmall.innerText='data';
+    headerStack=[]; showPayloadInStack=false; renderStack();
+    packetEl.style.display='none'; packetEl.setAttribute('aria-hidden','true');
+    packetEl.style.left='18px'; packetEmoji.innerText='📩'; packetSmall.innerText='data';
     setLive('Idle','Ready to simulate again'); highlightLayer(-1);
+    busy=false;
   });
 
-  // initial render & notes
+  // initial render
   renderStack();
-  setLive('Idle','Type a message, choose TCP or UDP, then press Send Packet');
-  // A11y: allow Enter to send
+  setLive('Idle','Type a message, choose TCP/UDP, adjust speed, then press Send');
   msgInput.addEventListener('keydown', e=>{ if(e.key==='Enter') sendPacketAnim(); });
 
-  // responsive re-render on resize (so travel width remains correct)
-  window.addEventListener('resize', ()=> {
-    // nothing to do, but keep UI responsive
-  });
+  // keep speed label updated when page loads/resizes
+  window.addEventListener('resize', ()=>{ /* responsive */ });
+
 </script>
 </body>
 </html>
