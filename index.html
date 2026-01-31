@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive OSI Model Simulator 🌐</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #1e1e1e;
+        color: #fff;
+        text-align: center;
+        padding: 20px;
+        overflow-x: hidden;
+    }
+
+    h1 { color: #00ffcc; margin-bottom: 10px; }
+    h2 { color: #00ffcc; margin: 10px 0; }
+
+    #controls { margin: 15px 0; }
+
+    input, select, button {
+        padding: 10px; font-size: 1em; margin: 5px; border-radius: 5px; border: none;
+    }
+
+    button { background: #00ffcc; color: #1e1e1e; cursor: pointer; }
+    button:hover { background: #00ffaa; }
+
+    #layers { display: flex; flex-direction: column; align-items: center; margin: 20px 0; }
+    .layer { width: 350px; padding: 10px; margin: 5px 0; border: 2px solid #00ffcc; border-radius: 8px; transition: background 0.5s, transform 0.5s; }
+    .active { background: #00ffcc33; transform: scale(1.05); }
+
+    #network { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 20px; position: relative; width: 90%; max-width: 900px; margin-left: auto; margin-right: auto; }
+    #computer1, #computer2 { font-size: 1.8em; margin: 15px; text-align: center; }
+
+    #packet { font-size: 2em; position: absolute; top: 50px; left: 0; transition: left 1s, transform 0.5s; }
+    #tooltip { margin-top: 10px; font-size: 1.2em; min-height: 50px; }
+
+    #explanation { max-width: 900px; margin: 20px auto; text-align: left; border: 2px solid #00ffcc; padding: 15px; border-radius: 8px; background: #111; }
+
+    footer { margin-top:30px; font-size:0.9em; color:#00ffcc; }
+</style>
+</head>
+<body>
+
+<h1>Interactive OSI Model Simulator 🌐</h1>
+<h2>Learn Networking Visually with Emoji Animations</h2>
+
+<div id="controls">
+    <input type="text" id="userMessage" placeholder="Type your message here ✍️" size="30">
+    <select id="protocol">
+        <option value="TCP">TCP 📦</option>
+        <option value="UDP">UDP 🎯</option>
+    </select>
+    <button onclick="sendPacket()">Send Packet</button>
+</div>
+
+<div id="layers">
+    <div class="layer">🌐 Application Layer</div>
+    <div class="layer">🎨 Presentation Layer</div>
+    <div class="layer">🔗 Session Layer</div>
+    <div class="layer">📦 Transport Layer</div>
+    <div class="layer">🛣️ Network Layer</div>
+    <div class="layer">💽 Data Link Layer</div>
+    <div class="layer">🔌 Physical Layer</div>
+</div>
+
+<div id="network">
+    <div id="computer1">💻 49.20.60.12</div>
+    <div id="computer2">💻 49.20.60.20</div>
+</div>
+
+<div id="packet">📩</div>
+<div id="tooltip"></div>
+
+<div id="explanation">
+    <h3>How the OSI Model Works</h3>
+    <p><strong>Encapsulation:</strong> Data moves <em>down</em> the layers on Computer 1, each layer adding headers or converting data: TCP/UDP headers, IP addresses, MAC addresses, and bits.</p>
+    <p><strong>Transmission:</strong> Packet travels across the network from Computer 1 → Computer 2. Packet changes visually at each layer with emojis.</p>
+    <p><strong>De-Encapsulation:</strong> Data moves <em>up</em> the layers on Computer 2, each layer removing headers and decoding data, until Application Layer receives the message.</p>
+    <p><strong>Interactive Features:</strong> Users can type a message, choose TCP or UDP, and see all transformations: Application → Presentation → Session → Transport → Network → Data Link → Physical.</p>
+</div>
+
+<footer>Made by Aryan Giri 💻</footer>
+
+<script>
+const layers = [
+    {name: "Application Layer 🌐", encaps: msg => `Application data: "${msg}"`, decaps: msg => `Message delivered: "${msg}"`},
+    {name: "Presentation Layer 🎨", encaps: () => `Data encoding/formatting`, decaps: () => `Data decoding`},
+    {name: "Session Layer 🔗", encaps: () => `Session established`, decaps: () => `Session verified`},
+    {name: "Transport Layer 📦", encaps: (proto) => `${proto} headers added`, decaps: (proto) => `${proto} headers removed`},
+    {name: "Network Layer 🛣️", encaps: () => `IP addresses added`, decaps: () => `IP addresses removed`},
+    {name: "Data Link Layer 💽", encaps: () => `MAC addresses added, framed`, decaps: () => `MAC addresses removed, frame extracted`},
+    {name: "Physical Layer 🔌", encaps: () => `Bits transmitted: 0️⃣1️⃣0️⃣1️⃣...`, decaps: () => `Bits received`}
+];
+
+let tooltip = document.getElementById("tooltip");
+let packet = document.getElementById("packet");
+
+function sendPacket() {
+    let userMessage = document.getElementById("userMessage").value || "Hello!";
+    let protocol = document.getElementById("protocol").value;
+    let i = 0;
+    const layerDivs = document.querySelectorAll(".layer");
+    const networkWidth = document.getElementById("network").offsetWidth;
+    const packetTravel = networkWidth - 60;
+
+    tooltip.innerText = "";
+    packet.style.left = "0px";
+    packet.style.top = "50px";
+
+    function encapsulation() {
+        if (i > 0) layerDivs[i-1].classList.remove("active");
+        if (i < layers.length) {
+            layerDivs[i].classList.add("active");
+            tooltip.innerText = layers[i].encaps(i === 0 ? userMessage : protocol);
+            switch(i){
+                case 3: packet.innerText = protocol === "TCP" ? "📦📩" : "🎯📩"; break;
+                case 4: packet.innerText = "🌐📩"; break;
+                case 5: packet.innerText = "💽📩"; break;
+                case 6: packet.innerText = "0️⃣1️⃣0️⃣1️⃣📩"; break;
+                default: packet.innerText = "📩";
+            }
+            packet.style.left = `${(i / (layers.length-1)) * packetTravel}px`;
+            i++;
+            setTimeout(encapsulation, 1000);
+        } else {
+            setTimeout(() => { i = layers.length - 1; decapsulation(); }, 1000);
+        }
+    }
+
+    function decapsulation() {
+        if(i >= 0){
+            layerDivs[i].classList.add("active");
+            tooltip.innerText = layers[i].decaps(i === 0 ? userMessage : protocol);
+            switch(i){
+                case 3: packet.innerText = protocol === "TCP" ? "📦📩" : "🎯📩"; break;
+                case 4: packet.innerText = "🌐📩"; break;
+                case 5: packet.innerText = "💽📩"; break;
+                case 6: packet.innerText = "0️⃣1️⃣0️⃣1️⃣📩"; break;
+                default: packet.innerText = "📩";
+            }
+            packet.style.left = `${(i / (layers.length-1)) * packetTravel}px`;
+            i--;
+            setTimeout(() => { layerDivs[i+1].classList.remove("active"); decapsulation(); }, 1000);
+        } else {
+            tooltip.innerText = `📬 Message delivered to Application Layer! "${userMessage}"`;
+            packet.innerText = "📩";
+            layerDivs[0].classList.remove("active");
+        }
+    }
+
+    encapsulation();
+}
+</script>
+
+</body>
+</html>
