@@ -1,158 +1,388 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Interactive OSI Model Simulator 🌐</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Interactive OSI Model Simulator 🌐 — Made by Aryan Giri</title>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #1e1e1e;
-        color: #fff;
-        text-align: center;
-        padding: 20px;
-        overflow-x: hidden;
-    }
+  :root{
+    --bg:#0f1113; --accent:#00ffcc; --card:#0b1111; --muted:#9bd;
+    --text:#eafaf6;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:Inter,Arial,Helvetica,sans-serif; background:var(--bg);
+    color:var(--text); display:flex; min-height:100vh; align-items:flex-start;
+    padding:20px;
+  }
 
-    h1 { color: #00ffcc; margin-bottom: 10px; }
-    h2 { color: #00ffcc; margin: 10px 0; }
+  .container{max-width:1200px; margin:0 auto; width:100%;}
+  header{display:flex; justify-content:space-between; align-items:center; gap:10px;}
+  h1{margin:0; color:var(--accent); font-size:20px}
+  .sub{color:#bfe; margin-top:6px; font-size:13px}
 
-    #controls { margin: 15px 0; }
+  .grid{
+    display:grid;
+    grid-template-columns: 320px 1fr 320px;
+    gap:18px;
+    margin-top:18px;
+  }
 
-    input, select, button {
-        padding: 10px; font-size: 1em; margin: 5px; border-radius: 5px; border: none;
-    }
+  /* Left: Layer explanations */
+  .panel{background:linear-gradient(180deg,#071114 0%, var(--card) 100%); border:1px solid rgba(0,255,204,0.08);
+    padding:14px; border-radius:10px;}
+  .layers-list {display:flex; flex-direction:column; gap:8px}
+  .layer-item{display:flex; gap:10px; align-items:flex-start; padding:8px; border-radius:8px;}
+  .layer-emoji{font-size:20px; width:36px; text-align:center}
+  .layer-title{font-weight:700; color:var(--accent); font-size:14px}
+  .layer-desc{font-size:13px; color:#cfe; margin-top:4px; opacity:.9}
 
-    button { background: #00ffcc; color: #1e1e1e; cursor: pointer; }
-    button:hover { background: #00ffaa; }
+  /* Center: animation area */
+  .sim-area{position:relative; height:420px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;}
+  .controls{display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap}
+  input[type="text"]{padding:8px 10px; border-radius:8px; border:none; min-width:220px}
+  select, button{padding:8px 10px; border-radius:8px; border:none; cursor:pointer}
+  button{background:var(--accent); color:#061013; font-weight:700}
+  .legend{font-size:13px; color:#cfe; margin-top:8px}
 
-    #layers { display: flex; flex-direction: column; align-items: center; margin: 20px 0; }
-    .layer { width: 350px; padding: 10px; margin: 5px 0; border: 2px solid #00ffcc; border-radius: 8px; transition: background 0.5s, transform 0.5s; }
-    .active { background: #00ffcc33; transform: scale(1.05); }
+  .network{
+    position:relative; width:100%; max-width:720px; height:260px; border-radius:10px;
+    border:1px dashed rgba(0,255,204,0.06); display:flex; align-items:center; justify-content:space-between;
+    padding:20px;
+    background:linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0.05));
+  }
 
-    #network { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 20px; position: relative; width: 90%; max-width: 900px; margin-left: auto; margin-right: auto; }
-    #computer1, #computer2 { font-size: 1.8em; margin: 15px; text-align: center; }
+  .host{width:120px; text-align:center}
+  .host .ip{font-weight:700; color:var(--accent); margin-top:6px}
+  .layer-stack{
+    position:absolute; left:50%; transform:translateX(-50%); top:10px; font-size:13px; color:#cfe; opacity:.9;
+  }
 
-    #packet { font-size: 2em; position: absolute; top: 50px; left: 0; transition: left 1s, transform 0.5s; }
-    #tooltip { margin-top: 10px; font-size: 1.2em; min-height: 50px; }
+  /* packet */
+  .packet{
+    position:absolute; top:120px; left:20px; font-size:28px; transition: left 700ms linear, top .3s;
+    background:rgba(0,255,204,0.06); padding:8px 12px; border-radius:12px; border:1px solid rgba(0,255,204,0.08);
+    display:flex; gap:8px; align-items:center; min-width:72px; justify-content:center;
+  }
+  .packet .small{font-size:12px; color:#cfe}
 
-    #explanation { max-width: 900px; margin: 20px auto; text-align: left; border: 2px solid #00ffcc; padding: 15px; border-radius: 8px; background: #111; }
+  /* right: dynamic explanation & stack */
+  .stack-list{display:flex; flex-direction:column; gap:8px; margin-top:10px}
+  .stack-item{background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; font-size:13px; display:flex; justify-content:space-between; align-items:center}
+  .action{font-size:14px; font-weight:700; color:var(--accent)}
+  .explain{font-size:13px; color:#cfe; margin-top:8px; line-height:1.4}
 
-    footer { margin-top:30px; font-size:0.9em; color:#00ffcc; }
+  footer{margin-top:12px; color:var(--accent); font-size:13px; text-align:center}
+  .controls .smalltext{font-size:13px; color:#cff}
+
+  /* highlight active layer on left */
+  .layer-active{background:linear-gradient(90deg, rgba(0,255,204,0.04), rgba(0,255,204,0.02));}
+
+  @media (max-width:980px){
+    .grid{grid-template-columns: 1fr; }
+    .network{height:220px}
+    .packet{top:100px}
+  }
 </style>
 </head>
 <body>
+<div class="container">
+  <header>
+    <div>
+      <h1>Interactive OSI Model Simulator 🌐</h1>
+      <div class="sub">Encapsulation ↓ — Transmission → — De-Encapsulation ↑ (emoji-only visuals)</div>
+    </div>
+    <div style="text-align:right; font-size:13px; color:#bfe">
+      Made by Aryan Giri 💻
+    </div>
+  </header>
 
-<h1>Interactive OSI Model Simulator 🌐</h1>
-<h2>Learn Networking Visually with Emoji Animations</h2>
+  <div class="grid">
+    <!-- LEFT: Layer definitions -->
+    <div class="panel">
+      <strong style="color:var(--accent)">OSI Layers — quick explanations</strong>
+      <div class="layers-list" id="layersList" style="margin-top:12px">
+        <div class="layer-item" data-idx="0"><div class="layer-emoji">🌐</div>
+          <div><div class="layer-title">Application</div><div class="layer-desc">User app data (message text). Highest layer — interacts with user.</div></div></div>
 
-<div id="controls">
-    <input type="text" id="userMessage" placeholder="Type your message here ✍️" size="30">
-    <select id="protocol">
-        <option value="TCP">TCP 📦</option>
-        <option value="UDP">UDP 🎯</option>
-    </select>
-    <button onclick="sendPacket()">Send Packet</button>
+        <div class="layer-item" data-idx="1"><div class="layer-emoji">🎨</div>
+          <div><div class="layer-title">Presentation</div><div class="layer-desc">Encoding / formatting (e.g., UTF-8). Prepares data for transport.</div></div></div>
+
+        <div class="layer-item" data-idx="2"><div class="layer-emoji">🔗</div>
+          <div><div class="layer-title">Session</div><div class="layer-desc">Manages sessions/connections (start/stop).</div></div></div>
+
+        <div class="layer-item" data-idx="3"><div class="layer-emoji">📦</div>
+          <div><div class="layer-title">Transport</div><div class="layer-desc">Adds TCP/UDP header (ports, reliability). Responsible for segmentation.</div></div></div>
+
+        <div class="layer-item" data-idx="4"><div class="layer-emoji">🛣️</div>
+          <div><div class="layer-title">Network</div><div class="layer-desc">Adds IP header (source/destination IP) — routing between networks.</div></div></div>
+
+        <div class="layer-item" data-idx="5"><div class="layer-emoji">💽</div>
+          <div><div class="layer-title">Data Link</div><div class="layer-desc">Adds MAC header/frame for local delivery on the link.</div></div></div>
+
+        <div class="layer-item" data-idx="6"><div class="layer-emoji">🔌</div>
+          <div><div class="layer-title">Physical</div><div class="layer-desc">Bits on the wire (0/1) — physical transmission.</div></div></div>
+      </div>
+    </div>
+
+    <!-- CENTER: Simulation -->
+    <div class="panel sim-area" aria-live="polite">
+      <div class="controls">
+        <input id="msg" type="text" placeholder="Type message to send (example: Hello!)" />
+        <select id="proto"><option value="TCP">TCP 📦</option><option value="UDP">UDP 🎯</option></select>
+        <button id="sendBtn">Send Packet</button>
+        <button id="resetBtn" style="background:#334; color:var(--text)">Reset</button>
+        <div style="flex:1"></div>
+        <div class="smalltext legend">Sender: 💻 49.20.60.12 → Receiver: 💻 49.20.60.20</div>
+      </div>
+
+      <div class="network" id="network">
+        <div class="host" id="hostA">
+          <div style="font-size:34px">💻</div>
+          <div class="ip">49.20.60.12</div>
+        </div>
+
+        <div class="layer-stack" id="stageLabel">Ready to send — press Send Packet ▶️</div>
+
+        <div class="host" id="hostB">
+          <div style="font-size:34px">💻</div>
+          <div class="ip">49.20.60.20</div>
+        </div>
+
+        <div class="packet" id="packet" style="left:18px">
+          <div id="packetEmoji">📩</div>
+          <div class="small" id="packetSmall">data</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px; color:#cfe; font-size:13px">
+        <strong id="liveAction">Action: —</strong>
+        <div id="liveExplain" class="explain">Short explanations and the header stack will appear on the right as the simulation runs.</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Stack & live steps -->
+    <div class="panel">
+      <strong style="color:var(--accent)">Encapsulation / De-Encapsulation</strong>
+      <div style="margin-top:10px; font-size:13px; color:#cfe">The <em>stack</em> shows how headers are added (encapsulation) and removed (de-encapsulation).</div>
+
+      <div class="stack-list" id="stackList" style="margin-top:12px">
+        <!-- dynamic items -->
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="action" id="stepLabel">State: Idle</div>
+        <div id="shortNotes" class="explain">
+          • Encapsulation: App → Pres → Sess → Trans → Net → DL → Phys (headers added)<br>
+          • Transmission: Packet moves across the network (left → right).<br>
+          • De-Encapsulation: Phys → DL → Net → Trans → Sess → Pres → App (headers removed).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Made by Aryan Giri 💻</footer>
 </div>
-
-<div id="layers">
-    <div class="layer">🌐 Application Layer</div>
-    <div class="layer">🎨 Presentation Layer</div>
-    <div class="layer">🔗 Session Layer</div>
-    <div class="layer">📦 Transport Layer</div>
-    <div class="layer">🛣️ Network Layer</div>
-    <div class="layer">💽 Data Link Layer</div>
-    <div class="layer">🔌 Physical Layer</div>
-</div>
-
-<div id="network">
-    <div id="computer1">💻 49.20.60.12</div>
-    <div id="computer2">💻 49.20.60.20</div>
-</div>
-
-<div id="packet">📩</div>
-<div id="tooltip"></div>
-
-<div id="explanation">
-    <h3>How the OSI Model Works</h3>
-    <p><strong>Encapsulation:</strong> Data moves <em>down</em> the layers on Computer 1, each layer adding headers or converting data: TCP/UDP headers, IP addresses, MAC addresses, and bits.</p>
-    <p><strong>Transmission:</strong> Packet travels across the network from Computer 1 → Computer 2. Packet changes visually at each layer with emojis.</p>
-    <p><strong>De-Encapsulation:</strong> Data moves <em>up</em> the layers on Computer 2, each layer removing headers and decoding data, until Application Layer receives the message.</p>
-    <p><strong>Interactive Features:</strong> Users can type a message, choose TCP or UDP, and see all transformations: Application → Presentation → Session → Transport → Network → Data Link → Physical.</p>
-</div>
-
-<footer>Made by Aryan Giri 💻</footer>
 
 <script>
-const layers = [
-    {name: "Application Layer 🌐", encaps: msg => `Application data: "${msg}"`, decaps: msg => `Message delivered: "${msg}"`},
-    {name: "Presentation Layer 🎨", encaps: () => `Data encoding/formatting`, decaps: () => `Data decoding`},
-    {name: "Session Layer 🔗", encaps: () => `Session established`, decaps: () => `Session verified`},
-    {name: "Transport Layer 📦", encaps: (proto) => `${proto} headers added`, decaps: (proto) => `${proto} headers removed`},
-    {name: "Network Layer 🛣️", encaps: () => `IP addresses added`, decaps: () => `IP addresses removed`},
-    {name: "Data Link Layer 💽", encaps: () => `MAC addresses added, framed`, decaps: () => `MAC addresses removed, frame extracted`},
-    {name: "Physical Layer 🔌", encaps: () => `Bits transmitted: 0️⃣1️⃣0️⃣1️⃣...`, decaps: () => `Bits received`}
-];
+  // elements
+  const msgInput = document.getElementById('msg');
+  const protoSel = document.getElementById('proto');
+  const sendBtn = document.getElementById('sendBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const packetEl = document.getElementById('packet');
+  const packetEmoji = document.getElementById('packetEmoji');
+  const packetSmall = document.getElementById('packetSmall');
+  const stackList = document.getElementById('stackList');
+  const liveAction = document.getElementById('liveAction');
+  const liveExplain = document.getElementById('liveExplain');
+  const stageLabel = document.getElementById('stageLabel');
+  const layersLeft = document.querySelectorAll('.layer-item');
 
-let tooltip = document.getElementById("tooltip");
-let packet = document.getElementById("packet");
+  const LAYERS = [
+    {name:'Application', emoji:'🌐', encaps: (data)=>`App data: "${data}"`, decaps: (data)=>`Application delivers: "${data}"`},
+    {name:'Presentation', emoji:'🎨', encaps: ()=>`Format/encode data`, decaps: ()=>`Decode/format`},
+    {name:'Session', emoji:'🔗', encaps: ()=>`Start session`, decaps: ()=>`End/verify session`},
+    {name:'Transport', emoji:'📦', encaps: (proto)=>`${proto} header (ports, seq)`, decaps:(proto)=>`${proto} header removed`},
+    {name:'Network', emoji:'🛣️', encaps: ()=>`IP header (src/dst IP)`, decaps: ()=>`IP header removed`},
+    {name:'Data Link', emoji:'💽', encaps: ()=>`MAC header/frame`, decaps: ()=>`Frame extracted, MAC removed`},
+    {name:'Physical', emoji:'🔌', encaps: ()=>`Bits (0/1)`, decaps: ()=>`Bits -> frames`},
+  ];
 
-function sendPacket() {
-    let userMessage = document.getElementById("userMessage").value || "Hello!";
-    let protocol = document.getElementById("protocol").value;
-    let i = 0;
-    const layerDivs = document.querySelectorAll(".layer");
-    const networkWidth = document.getElementById("network").offsetWidth;
-    const packetTravel = networkWidth - 60;
+  // stack (top is last)
+  let headerStack = [];
+  let busy=false;
 
-    tooltip.innerText = "";
-    packet.style.left = "0px";
-    packet.style.top = "50px";
+  function renderStack(){
+    stackList.innerHTML = '';
+    // show data at bottom first (application payload)
+    const payload = document.createElement('div');
+    payload.className = 'stack-item';
+    payload.innerHTML = `<div>📩 Payload (Application)</div><div style="opacity:.85">"${msgInput.value || 'Hello!'}"</div>`;
+    stackList.appendChild(payload);
 
-    function encapsulation() {
-        if (i > 0) layerDivs[i-1].classList.remove("active");
-        if (i < layers.length) {
-            layerDivs[i].classList.add("active");
-            tooltip.innerText = layers[i].encaps(i === 0 ? userMessage : protocol);
-            switch(i){
-                case 3: packet.innerText = protocol === "TCP" ? "📦📩" : "🎯📩"; break;
-                case 4: packet.innerText = "🌐📩"; break;
-                case 5: packet.innerText = "💽📩"; break;
-                case 6: packet.innerText = "0️⃣1️⃣0️⃣1️⃣📩"; break;
-                default: packet.innerText = "📩";
-            }
-            packet.style.left = `${(i / (layers.length-1)) * packetTravel}px`;
-            i++;
-            setTimeout(encapsulation, 1000);
-        } else {
-            setTimeout(() => { i = layers.length - 1; decapsulation(); }, 1000);
-        }
+    // add stack items from bottom to top (application at bottom)
+    for(let i=headerStack.length-1;i>=0;i--){
+      const it = document.createElement('div');
+      it.className = 'stack-item';
+      it.innerHTML = `<div style="font-weight:700">${headerStack[i].icon} ${headerStack[i].name}</div><div style="opacity:.9">${headerStack[i].info}</div>`;
+      stackList.appendChild(it);
+    }
+  }
+
+  function highlightLayer(index){
+    layersLeft.forEach(el=>el.classList.remove('layer-active'));
+    const el = document.querySelector(`.layer-item[data-idx="${index}"]`);
+    if(el) el.classList.add('layer-active');
+  }
+
+  function setLive(action, explain){
+    liveAction.innerText = `Action: ${action}`;
+    liveExplain.innerText = explain;
+    stageLabel.innerText = `${action}`;
+  }
+
+  function pushHeader(name, icon, info){
+    headerStack.push({name, icon, info});
+    renderStack();
+  }
+  function popHeader(){
+    headerStack.pop();
+    renderStack();
+  }
+
+  // positions
+  function getTravelWidth(){
+    const network = document.getElementById('network');
+    const rect = network.getBoundingClientRect();
+    // packet left margin 18, right margin ~18
+    return rect.width - 80;
+  }
+
+  async function sendPacketAnim(){
+    if(busy) return;
+    busy=true;
+    headerStack = [];
+    renderStack();
+    const message = msgInput.value || 'Hello!';
+    const proto = protoSel.value || 'TCP';
+    const travelWidth = getTravelWidth();
+    // reset packet to sender
+    packetEl.style.left = '18px';
+    packetSmall.innerText = 'payload';
+    packetEmoji.innerText = '📩';
+    setLive('Encapsulation ↓', 'Starting encapsulation at sender (top → down)');
+    // Encapsulation: move down layers 0..6
+    for(let i=0;i<LAYERS.length;i++){
+      highlightLayer(i);
+      // text
+      let info;
+      if(i===0){ info = LAYERS[i].encaps(message); }
+      else if(i===3){ info = LAYERS[i].encaps(proto); }
+      else { info = LAYERS[i].encaps(); }
+      setLive(`Encapsulating: ${LAYERS[i].name}`, info);
+
+      // visual stack change: add header (but for Application layer we keep payload as bottom)
+      if(i===3){
+        pushHeader('Transport','📦', LAYERS[i].encaps(proto));
+        packetEmoji.innerText = proto==='TCP' ? '📦📩' : '🎯📩';
+        packetSmall.innerText = proto==='TCP' ? 'TCP seg' : 'UDP seg';
+      } else if(i===4){
+        pushHeader('Network','🌐', LAYERS[i].encaps());
+        packetEmoji.innerText = '🌐📩'; packetSmall.innerText='IP packet';
+      } else if(i===5){
+        pushHeader('Data Link','💽', LAYERS[i].encaps());
+        packetEmoji.innerText = '💽📩'; packetSmall.innerText='Frame';
+      } else if(i===6){
+        pushHeader('Physical','🔌', LAYERS[i].encaps());
+        packetEmoji.innerText = '0️⃣1️⃣0️⃣1️⃣'; packetSmall.innerText='Bits';
+      } else if(i===1 || i===2){
+        // presentation/session — short note on stack (not separate headers)
+        pushHeader(LAYERS[i].name, LAYERS[i].emoji, LAYERS[i].encaps());
+        packetSmall.innerText = 'data';
+      } else if(i===0){
+        // application data already present
+        // (no header pushed for app because it's payload)
+      }
+
+      // move packet horizontally slightly step-by-step
+      const left = Math.round((i / (LAYERS.length-1)) * travelWidth) + 18;
+      packetEl.style.left = left + 'px';
+
+      // wait
+      await new Promise(r=>setTimeout(r, 900));
     }
 
-    function decapsulation() {
-        if(i >= 0){
-            layerDivs[i].classList.add("active");
-            tooltip.innerText = layers[i].decaps(i === 0 ? userMessage : protocol);
-            switch(i){
-                case 3: packet.innerText = protocol === "TCP" ? "📦📩" : "🎯📩"; break;
-                case 4: packet.innerText = "🌐📩"; break;
-                case 5: packet.innerText = "💽📩"; break;
-                case 6: packet.innerText = "0️⃣1️⃣0️⃣1️⃣📩"; break;
-                default: packet.innerText = "📩";
-            }
-            packet.style.left = `${(i / (layers.length-1)) * packetTravel}px`;
-            i--;
-            setTimeout(() => { layerDivs[i+1].classList.remove("active"); decapsulation(); }, 1000);
-        } else {
-            tooltip.innerText = `📬 Message delivered to Application Layer! "${userMessage}"`;
-            packet.innerText = "📩";
-            layerDivs[0].classList.remove("active");
-        }
+    // pause at mid (transmission)
+    setLive('Transmission →','Packet is travelling across the network (link) to receiver');
+    // slide fully near receiver mid
+    packetEl.style.left = (travelWidth + 18) + 'px';
+    await new Promise(r=>setTimeout(r, 900));
+
+    // De-Encapsulation: pop from Physical up to Application
+    setLive('De-Encapsulation ↑','Receiver starts removing headers (bottom → top)');
+    highlightLayer(LAYERS.length-1);
+    for(let i=LAYERS.length-1;i>=0;i--){
+      highlightLayer(i);
+      if(i===6){
+        setLive('Physical: Receiving bits','Convert bits to frame');
+        // pop physical
+        await new Promise(r=>setTimeout(r,600));
+        popHeader();
+        packetEmoji.innerText = '💽📩'; packetSmall.innerText='Frame';
+      } else if(i===5){
+        setLive('Data Link: Frame processing','Extract frame, check MAC');
+        await new Promise(r=>setTimeout(r,700));
+        popHeader();
+        packetEmoji.innerText = '🌐📩'; packetSmall.innerText='IP packet';
+      } else if(i===4){
+        setLive('Network: IP processing','Remove IP header, route to transport');
+        await new Promise(r=>setTimeout(r,700));
+        popHeader();
+        packetEmoji.innerText = proto==='TCP' ? '📦📩' : '🎯📩';
+        packetSmall.innerText = proto==='TCP' ? 'TCP seg' : 'UDP seg';
+      } else if(i===3){
+        setLive('Transport: Port & reliability','Transport removes headers, delivers segments to app');
+        await new Promise(r=>setTimeout(r,900));
+        popHeader();
+        packetEmoji.innerText = '📩'; packetSmall.innerText='payload';
+      } else if(i===2 || i===1){
+        setLive(`${LAYERS[i].name}: ${i===2?'Session':'Presentation'}`, LAYERS[i].decaps());
+        await new Promise(r=>setTimeout(r,600));
+        popHeader(); // these were pushed earlier
+      } else if(i===0){
+        setLive('Application: Message delivered','Final data handed to application (user sees message)');
+        await new Promise(r=>setTimeout(r,700));
+        // done
+      }
+      // move packet a tiny bit left so it's visually rising up
+      const left = Math.round((i / (LAYERS.length-1)) * travelWidth) + 18;
+      packetEl.style.left = left + 'px';
+      await new Promise(r=>setTimeout(r,150));
     }
 
-    encapsulation();
-}
+    // finish
+    setLive('Done ✅', `Delivered message: "${message}"`);
+    highlightLayer(-1);
+    busy=false;
+  }
+
+  sendBtn.addEventListener('click', sendPacketAnim);
+  resetBtn.addEventListener('click', ()=>{
+    headerStack=[]; renderStack(); packetEl.style.left='18px'; packetEmoji.innerText='📩'; packetSmall.innerText='data';
+    setLive('Idle','Ready to simulate again'); highlightLayer(-1);
+  });
+
+  // initial render & notes
+  renderStack();
+  setLive('Idle','Type a message, choose TCP or UDP, then press Send Packet');
+  // A11y: allow Enter to send
+  msgInput.addEventListener('keydown', e=>{ if(e.key==='Enter') sendPacketAnim(); });
+
+  // responsive re-render on resize (so travel width remains correct)
+  window.addEventListener('resize', ()=> {
+    // nothing to do, but keep UI responsive
+  });
 </script>
-
 </body>
 </html>
